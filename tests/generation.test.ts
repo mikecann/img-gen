@@ -178,6 +178,9 @@ describe("generateWithFallback", () => {
   it("uses preferred model when specified", async () => {
     const calls: string[] = [];
     const trackingFetch: typeof fetch = async (url, opts) => {
+      const headers = new Headers(opts?.headers);
+      expect(headers.get("HTTP-Referer")).toBe("https://github.com/mikecann/img-gen");
+      expect(headers.get("X-Title")).toBe("img-gen");
       const body = JSON.parse((opts?.body as string) ?? "{}");
       calls.push(body.model);
       return mockFetch(okResponse)(url, opts);

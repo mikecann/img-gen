@@ -105,8 +105,8 @@ export async function generateOne(
       headers: {
         Authorization: `Bearer ${args.apiKey}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://github.com/mikecann/mikerosoft",
-        "X-Title": "mikerosoft/img-gen",
+        "HTTP-Referer": "https://github.com/mikecann/img-gen",
+        "X-Title": "img-gen",
       },
       body: JSON.stringify(body),
     }),

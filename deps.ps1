@@ -14,7 +14,7 @@ if (-not (Get-Command bun -ErrorAction SilentlyContinue)) {
 $key = $env:OPENROUTER_API_KEY
 if (-not $key) {
     # Also check the .env in the repo root
-    $envFile = Join-Path $PSScriptRoot ".." ".." ".env"
+    $envFile = Join-Path $PSScriptRoot ".env"
     if (Test-Path $envFile) {
         $content = Get-Content $envFile -Raw
         if ($content -match 'OPENROUTER_API_KEY\s*=\s*(.+)') {
@@ -31,5 +31,14 @@ if (-not $key) {
 }
 
 if ($ok) {
+    Push-Location $PSScriptRoot
+    try {
+        bun install --frozen-lockfile
+        if ($LASTEXITCODE -ne 0) { throw "bun install failed ($LASTEXITCODE)" }
+    } finally {
+        Pop-Location
+    }
     Write-Host "  [img-gen] all dependencies satisfied" -ForegroundColor Green
+} else {
+    throw "Missing img-gen dependencies. See the messages above."
 }
