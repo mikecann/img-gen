@@ -34,7 +34,8 @@ repo.
 ## Paths and commands
 
 - `src/bun/generation.ts`: testable generation logic and OpenRouter attribution.
-- `src/bun/index.ts`: Electrobun window, RPC, SSE, temporary images and downloads.
+- `src/bun/index.ts`: Electrobun window, RPC, temporary images and downloads.
+- `src/bun/events.ts`: local HTTP server and the SSE stream the UI listens to.
 - `src/ui/`: React UI and annotation tools.
 - `tests/`: mocked generation tests and disposable launcher/installer checks.
 - `electrobun.config.ts`: app configuration. Keep the existing app identifier

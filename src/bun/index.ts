@@ -5,6 +5,7 @@ import {
   generateWithFallback,
   fetchImageModels,
 } from "./generation.js";
+import { createEventsServer } from "./events.js";
 import * as path from "path";
 import * as fs from "fs";
 import * as crypto from "crypto";
@@ -40,64 +41,21 @@ fs.mkdirSync(tempDir, { recursive: true });
 const imageStore = new Map<string, { tempPath: string }>();
 
 // ---------------------------------------------------------------------------
-// SSE - bun -> webview
-// ---------------------------------------------------------------------------
-
-const sseClients = new Set<ReadableStreamDefaultController<Uint8Array>>();
-
-function broadcastSse(event: SseEvent) {
-  const bytes = new TextEncoder().encode(`data: ${JSON.stringify(event)}\n\n`);
-  for (const ctrl of sseClients) {
-    try {
-      ctrl.enqueue(bytes);
-    } catch {
-      sseClients.delete(ctrl);
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------
 // HTTP server - images + SSE
 // ---------------------------------------------------------------------------
 
-const server = Bun.serve({
-  port: 0,
-  fetch(req) {
-    const url = new URL(req.url);
-
-    if (url.pathname === "/events") {
-      let ctrl: ReadableStreamDefaultController<Uint8Array>;
-      const stream = new ReadableStream<Uint8Array>({
-        start(c) {
-          ctrl = c;
-          sseClients.add(ctrl);
-          const ping = setInterval(() => {
-            try { ctrl.enqueue(new TextEncoder().encode(": ping\n\n")); }
-            catch { clearInterval(ping); }
-          }, 15_000);
-        },
-        cancel() { sseClients.delete(ctrl); },
+const { server, broadcast: broadcastSse } = createEventsServer<SseEvent>((req) => {
+  const url = new URL(req.url);
+  const match = url.pathname.match(/^\/images\/([^/]+\.png)$/);
+  if (match) {
+    const filePath = path.join(tempDir, match[1]);
+    if (fs.existsSync(filePath))
+      return new Response(Bun.file(filePath), {
+        headers: { "Content-Type": "image/png", "Access-Control-Allow-Origin": "*" },
       });
-      return new Response(stream, {
-        headers: {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          "Access-Control-Allow-Origin": "*",
-        },
-      });
-    }
+  }
 
-    const match = url.pathname.match(/^\/images\/([^/]+\.png)$/);
-    if (match) {
-      const filePath = path.join(tempDir, match[1]);
-      if (fs.existsSync(filePath))
-        return new Response(Bun.file(filePath), {
-          headers: { "Content-Type": "image/png", "Access-Control-Allow-Origin": "*" },
-        });
-    }
-
-    return new Response("Not found", { status: 404 });
-  },
+  return new Response("Not found", { status: 404 });
 });
 
 const baseUrl = `http://127.0.0.1:${server.port}`;
