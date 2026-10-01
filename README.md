@@ -5,10 +5,10 @@ A little chat window for making and refining images with Gemini
 Windows · macOS
 
 <!-- media: hero -->
-<!-- ![img-gen](docs/hero.png) -->
-<!-- /media: hero -->
+![Image Gen after circling a plant on a generated picture and asking for it to become a cactus](docs/edit.png)
 
-![Image Gen header](docs/header.webp)
+[Watch it run (47 seconds, the waits are cut out)](docs/demo.mp4)
+<!-- /media: hero -->
 
 ## What it is
 
