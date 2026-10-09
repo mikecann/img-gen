@@ -44,7 +44,7 @@ const imageStore = new Map<string, { tempPath: string }>();
 // HTTP server - images + SSE
 // ---------------------------------------------------------------------------
 
-const { server, broadcast: broadcastSse } = createEventsServer<SseEvent>((req) => {
+const { server, broadcast: broadcastSse, urlFor } = createEventsServer<SseEvent>((req) => {
   const url = new URL(req.url);
   const match = url.pathname.match(/^\/images\/([^/]+\.png)$/);
   if (match) {
@@ -58,8 +58,7 @@ const { server, broadcast: broadcastSse } = createEventsServer<SseEvent>((req) =
   return new Response("Not found", { status: 404 });
 });
 
-const baseUrl = `http://127.0.0.1:${server.port}`;
-log(`img-gen server at ${baseUrl} | apiKey=${apiKey ? "set" : "MISSING"}`);
+log(`img-gen server at http://127.0.0.1:${server.port} | apiKey=${apiKey ? "set" : "MISSING"}`);
 
 // ---------------------------------------------------------------------------
 // Background generation task
@@ -98,7 +97,7 @@ async function runGeneration(params: GenerateParams) {
         broadcastSse({
           kind: "imageResult",
           jobId,
-          image: { imageId, serveUrl: `${baseUrl}/images/${filename}`, tempPath, modelComment: comment },
+          image: { imageId, serveUrl: urlFor(`/images/${filename}`), tempPath, modelComment: comment },
         });
       } catch (err) {
         log(`[${jobId}] Error: ${err}`);
@@ -119,7 +118,7 @@ const rpc = BrowserView.defineRPC<ImgGenRPC>({
   maxRequestTime: 15_000,
   handlers: {
     requests: {
-      getConfig: () => ({ workingDir: folderPath, eventsUrl: `${baseUrl}/events` }),
+      getConfig: () => ({ workingDir: folderPath, eventsUrl: urlFor("/events") }),
 
       getModels: async () => {
         if (!apiKey) return MODELS.map((id) => ({ id, name: id }));
